@@ -17,6 +17,7 @@ enum TileType : int
     GRASS,      // Marks unoccupied space, can be overwritten 
     DIRT,       // Marks the path, cannot be overwritten
     WAYPOINT,   // Marks where the path turns, cannot be overwritten
+	TURRET,     // Marks where a tuurret is placed, cannot be overwritten
     COUNT
 };
 
@@ -40,11 +41,13 @@ void DrawTile(int row, int col, Color color)
 
 void DrawTile(int row, int col, int type)
 {
-    Color colors[3] =
+    Color colors[4] =
     {
         GREEN,
         BEIGE,
-        SKYBLUE
+        SKYBLUE,
+        ORANGE
+
     };
     //assert(type >= 0 && type < COUNT);
     DrawTile(row, col, colors[type]);
@@ -115,6 +118,11 @@ struct Enemy
     Cell cell;
     float health;
     bool destroy;
+    int current_tile;
+    int next_tile;
+	Vector2 enemy_position;
+	float enemy_speed;
+	float min_distance = enemy_speed / 60.0f;
 };
 
 // Fill in for Lab 2
@@ -122,6 +130,10 @@ struct Turret
 {
     Cell cell;
     Enemy* target;
+	Vector2 turret_position;
+    float damage_per_bullet;
+	float fire_rate;
+
 };
 
 int main()
@@ -134,17 +146,17 @@ int main()
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 2
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 3
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 4
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 5
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 5
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 6
-            { 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0 }, // 7
+            { 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 3, 0, 0, 0, 0 }, // 7
             { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 8
-            { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 9
-            { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 10
+            { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0 }, // 9
+            { 0, 0, 0, 1, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 10
             { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 11
             { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 12
             { 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0 }, // 13
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 14
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 15
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0 }, // 15
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 16
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0 }, // 17
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 18
@@ -168,10 +180,10 @@ int main()
     std::vector<Enemy> enemies;  // Use in Lab 2 and Assignment 1
 
     // Manual turret creation example
-    turrets.resize(3);
-    turrets[0].cell = { 3,  7  };
-    turrets[1].cell = { 10, 7  };
-    turrets[2].cell = { 15, 14 };
+    //turrets.resize(3);
+    //turrets[0].cell = { 3,  7  };
+    //turrets[1].cell = { 10, 7  };
+    //turrets[2].cell = { 15, 14 };
 
     // Search array for desired tiles (ie turrets)
     for (int row = 0; row < TILE_SIZE; row++)
@@ -183,6 +195,7 @@ int main()
                 // Construct turret here
                 Turret turret{};
                 turret.cell = { row, col };
+				turret.turret_position = {col * TILE_SIZE, row * TILE_SIZE};
                 turrets.push_back(turret);
             }
         }
@@ -315,7 +328,7 @@ int main()
 
         for (const Turret& turret : turrets)
         {
-            DrawRectangleV(TileCenter(turret.cell.row, turret.cell.col), { TILE_SIZE, TILE_SIZE }, ORANGE);
+            DrawRectangleV(turret.turret_position, { TILE_SIZE, TILE_SIZE }, ORANGE);
         }
 
         DrawCircleV(enemy_position, 20.0f, GOLD);
