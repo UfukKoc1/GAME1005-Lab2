@@ -165,8 +165,6 @@ int main()
     };
     std::vector<Cell> waypoints = FloodFill({ 0, 12 }, tiles, WAYPOINT);
 
-    float bullet_time_current = 0.0f;
-    float bullet_time_total = 0.25f;
     std::vector<Bullet> bullets;
 
     // Use in Assignment 1
@@ -201,7 +199,7 @@ int main()
                 Turret turret{};
                 turret.cell = { row, col };
 				turret.turret_position = TileCenter(row, col);
-				turret.fire_rate = 1.0f;
+				turret.fire_rate = 2.0f;
 
                 turrets.push_back(turret);
             }
@@ -287,17 +285,40 @@ int main()
 
 
         // Bullet creation
-        bullet_time_current += dt;
-        if (bullet_time_current >= bullet_time_total && IsKeyDown(KEY_SPACE) && !enemies.empty())
-        {
-            bullet_time_current = 0.0f;
 
-            for (const Turret& turret : turrets)
-            {
+		for (int i = 0; i < turrets.size(); i++)
+		{
+			const Turret& turret = turrets[i];
+            turret_timers[i] += dt;
+        
+			if (turret_timers[i] < 1.0f / turret.fire_rate || !IsKeyDown(KEY_SPACE))
+			{
+				continue; 
+			}
+
+				const Enemy* nearest_enemy = nullptr;
+				float nearest_distance = FLT_MAX;
+                
+				for (const Enemy& enemy : enemies)
+				{
+					float distance = Vector2Distance(turret.turret_position, enemy.enemy_position);
+					if (distance < nearest_distance)
+					{
+						nearest_distance = distance;
+						nearest_enemy = &enemy;
+					}
+				}
+
+				if (nearest_enemy == nullptr)
+				{
+					continue; 
+				}
+
+				turret_timers[i] = 0.0f;
 
                 Bullet bullet{};
                 bullet.position = turret.turret_position;
-                bullet.direction = Vector2Normalize(enemies.front().enemy_position - bullet.position);
+                bullet.direction = Vector2Normalize(nearest_enemy->enemy_position - bullet.position);
 
                 bullet.speed = 250;
                 bullet.radius = 15;
@@ -310,7 +331,7 @@ int main()
 
                 bullets.push_back(bullet);
             }
-        }
+        
 
         // Bullet update
         for (Bullet& bullet : bullets)
