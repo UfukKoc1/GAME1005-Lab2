@@ -137,6 +137,17 @@ struct Turret
 	float fire_rate;
 };
 
+//Turret placement limit amount
+constexpr int MAX_TURRETS = 5;
+
+enum GameState 
+{
+    PLACING_TURRETS,
+    PLAYING,
+	WON,
+	LOST
+};
+
 int main()
 {
     int tiles[TILE_COUNT][TILE_COUNT]
@@ -147,17 +158,17 @@ int main()
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 2
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 3
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 4
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 5
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 5
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 6
-            { 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 3, 0, 0, 0, 0 }, // 7
+            { 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0 }, // 7
             { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 8
-            { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0 }, // 9
-            { 0, 0, 0, 1, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 10
+            { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 9
+            { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 10
             { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 11
             { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 12
             { 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0 }, // 13
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 14
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0 }, // 15
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 15
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 16
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0 }, // 17
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 18
@@ -181,140 +192,192 @@ int main()
     int enemies_spawned = 0;
     int total_enemies = 10; //enemy count
 
+    //No Turrets in grid, commented unless turrets are preadded.
+    //// Search array for desired tiles (ie turrets)
+    //for (int row = 0; row < TILE_COUNT; row++)
+    //{
+    //    for (int col = 0; col < TILE_COUNT; col++)
+    //    {
+    //        if (tiles[row][col] == TURRET)
+    //        {
+    //            // Construct turret here
+    //            Turret turret{};
+    //            turret.cell = { row, col };
+				//turret.turret_position = TileCenter(row, col);
+				//turret.fire_rate = 2.0f;
 
-    // Manual turret creation example
-    //turrets.resize(3);
-    //turrets[0].cell = { 3,  7  };
-    //turrets[1].cell = { 10, 7  };
-    //turrets[2].cell = { 15, 14 };
+    //            turrets.push_back(turret);
+    //        }
+    //    }
+    //}
 
-    // Search array for desired tiles (ie turrets)
-    for (int row = 0; row < TILE_COUNT; row++)
-    {
-        for (int col = 0; col < TILE_COUNT; col++)
-        {
-            if (tiles[row][col] == TURRET)
-            {
-                // Construct turret here
-                Turret turret{};
-                turret.cell = { row, col };
-				turret.turret_position = TileCenter(row, col);
-				turret.fire_rate = 2.0f;
-
-                turrets.push_back(turret);
-            }
-        }
-    }
-
-    std::vector<float> turret_timers(turrets.size(), 0.0f);
+    std::vector<float> turret_timers;
+	GameState state = PLACING_TURRETS;
 
     InitWindow(SCREEN_SIZE, SCREEN_SIZE, "Tower Defense");
     SetTargetFPS(60);
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
-		spawn_timer += dt;
 
-        if (spawn_timer >= spawn_interval && enemies_spawned < total_enemies)
+        if (state == PLACING_TURRETS)
         {
-            Enemy enemy{};
-
-            enemy.current_tile = 0;
-            enemy.next_tile = 1;
-
-            enemy.cell = waypoints[0];
-            enemy.enemy_position = TileCenter(waypoints[0].row, waypoints[0].col);
-
-            enemies_spawned++;
-            spawn_timer = 0.0f;
-
-
-            enemy.health = 100.0f;
-            enemy.enemy_speed = 250.0f;
-
-			enemies.push_back(enemy);
-        }
-
-
-
-        // Enemy movement (need to loop through enemies vector to get marks on Lab 2 and Assignment 1)
-        for (Enemy& enemy : enemies)
-        {
-            // Apply enemy movement and gameplay logic (such as flagging for removal when health is <= 0.0f) here
-            if (!enemy.at_end)
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
+				Vector2 mouse_position = GetMousePosition();
+				Cell cell = { (int)(mouse_position.y / TILE_SIZE), (int)(mouse_position.x / TILE_SIZE) };
 
-				Vector2 target = TileCenter(waypoints[enemy.next_tile].row, waypoints[enemy.next_tile].col);
-				Vector2 direction = Vector2Normalize(target - enemy.enemy_position); //to get direction to waypoint
+				bool valid = InBounds(cell) && tiles[cell.row][cell.col] == GRASS;
 
-				enemy.enemy_position += direction * enemy.enemy_speed * dt;
-
-				if (CheckCollisionPointCircle(enemy.enemy_position, target, enemy.enemy_speed * dt))
+				for (const Turret& turret : turrets)
 				{
-					enemy.enemy_position = target;
-                    
-					enemy.current_tile = enemy.next_tile;
-					enemy.next_tile++;
-
-					if (enemy.next_tile >= waypoints.size())
-					{
-						enemy.at_end = true;
-					}
+					if (turret.cell.row == cell.row && turret.cell.col == cell.col)
+					
+						valid = false;
+					
 				}
+
+                if (valid)
+                {
+                    // Place turret
+                    Turret turret{};
+                    turret.cell = cell;
+					turret.turret_position = TileCenter(cell.row, cell.col);
+					turret.fire_rate = 2.0f;
+
+					turrets.push_back(turret);
+					turret_timers.push_back(0.0f);
+
+					if (turrets.size() >= MAX_TURRETS)
+					{
+						state = PLAYING;
+					}
+
+                }
             }
 
-        }
-
-        // Acquire nearest enemy as target and shoot it if the turret is off-cooldown
-        for (Turret& turret : turrets)
-        {
-            Vector2 turret_position = TileCenter(turret.cell.row, turret.cell.col);
-            float max = FLT_MAX;
-            for (Enemy& enemy : enemies)
+            if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
-                Vector2 enemy_position = TileCenter(enemy.cell.row, enemy.cell.col);
-                float distance = Vector2Distance(turret_position, enemy_position);
-                if (distance < max)
+                Vector2 mouse_position = GetMousePosition();
+                Cell cell = { (int)(mouse_position.y / TILE_SIZE), (int)(mouse_position.x / TILE_SIZE) };
+
+                for (size_t i = 0; i < turrets.size(); i++)
                 {
-                    max = distance;
-                    // Target nearest enemy
+                    if (turrets[i].cell.row == cell.row && turrets[i].cell.col == cell.col)
+                    {
+                        turrets.erase(turrets.begin() + i);
+                        turret_timers.erase(turret_timers.begin() + i);
+                        break;
+                    }
                 }
             }
         }
 
+        if (state == PLAYING)
+        {
+
+            spawn_timer += dt;
+
+            if (spawn_timer >= spawn_interval && enemies_spawned < total_enemies)
+            {
+                Enemy enemy{};
+
+                enemy.current_tile = 0;
+                enemy.next_tile = 1;
+
+                enemy.cell = waypoints[0];
+                enemy.enemy_position = TileCenter(waypoints[0].row, waypoints[0].col);
+
+                enemies_spawned++;
+                spawn_timer = 0.0f;
 
 
-        // Bullet creation
+                enemy.health = 100.0f;
+                enemy.enemy_speed = 250.0f;
 
-		for (int i = 0; i < turrets.size(); i++)
-		{
-			const Turret& turret = turrets[i];
-            turret_timers[i] += dt;
-        
-			if (turret_timers[i] < 1.0f / turret.fire_rate || !IsKeyDown(KEY_SPACE))
-			{
-				continue; 
-			}
+                enemies.push_back(enemy);
+            }
 
-				const Enemy* nearest_enemy = nullptr;
-				float nearest_distance = FLT_MAX;
-                
-				for (const Enemy& enemy : enemies)
-				{
-					float distance = Vector2Distance(turret.turret_position, enemy.enemy_position);
-					if (distance < nearest_distance)
-					{
-						nearest_distance = distance;
-						nearest_enemy = &enemy;
-					}
-				}
 
-				if (nearest_enemy == nullptr)
-				{
-					continue; 
-				}
 
-				turret_timers[i] = 0.0f;
+            // Enemy movement (need to loop through enemies vector to get marks on Lab 2 and Assignment 1)
+            for (Enemy& enemy : enemies)
+            {
+                // Apply enemy movement and gameplay logic (such as flagging for removal when health is <= 0.0f) here
+                if (!enemy.at_end)
+                {
+
+                    Vector2 target = TileCenter(waypoints[enemy.next_tile].row, waypoints[enemy.next_tile].col);
+                    Vector2 direction = Vector2Normalize(target - enemy.enemy_position); //to get direction to waypoint
+
+                    enemy.enemy_position += direction * enemy.enemy_speed * dt;
+
+                    if (CheckCollisionPointCircle(enemy.enemy_position, target, enemy.enemy_speed * dt))
+                    {
+                        enemy.enemy_position = target;
+
+                        enemy.current_tile = enemy.next_tile;
+                        enemy.next_tile++;
+
+                        if (enemy.next_tile >= waypoints.size())
+                        {
+                            enemy.at_end = true;
+                        }
+                    }
+                }
+
+            }
+
+            //// Acquire nearest enemy as target and shoot it if the turret is off-cooldown
+            //for (Turret& turret : turrets)
+            //{
+            //    Vector2 turret_position = TileCenter(turret.cell.row, turret.cell.col);
+            //    float max = FLT_MAX;
+            //    for (Enemy& enemy : enemies)
+            //    {
+            //        Vector2 enemy_position = TileCenter(enemy.cell.row, enemy.cell.col);
+            //        float distance = Vector2Distance(turret_position, enemy_position);
+            //        if (distance < max)
+            //        {
+            //            max = distance;
+            //            // Target nearest enemy
+            //        }
+            //    }
+            //}
+
+
+
+            // Bullet creation
+
+            for (int i = 0; i < turrets.size(); i++)
+            {
+                const Turret& turret = turrets[i];
+                turret_timers[i] += dt;
+
+                if (turret_timers[i] < 1.0f / turret.fire_rate || !IsKeyDown(KEY_SPACE))
+                {
+                    continue;
+                }
+
+                const Enemy* nearest_enemy = nullptr;
+                float nearest_distance = FLT_MAX;
+
+                for (const Enemy& enemy : enemies)
+                {
+                    float distance = Vector2Distance(turret.turret_position, enemy.enemy_position);
+                    if (distance < nearest_distance)
+                    {
+                        nearest_distance = distance;
+                        nearest_enemy = &enemy;
+                    }
+                }
+
+                if (nearest_enemy == nullptr)
+                {
+                    continue;
+                }
+
+                turret_timers[i] = 0.0f;
 
                 Bullet bullet{};
                 bullet.position = turret.turret_position;
@@ -331,54 +394,58 @@ int main()
 
                 bullets.push_back(bullet);
             }
-        
 
-        // Bullet update
-        for (Bullet& bullet : bullets)
-        {
-            Vector2 bullet_velocity = bullet.direction * bullet.speed;
-            bullet.position += bullet_velocity * dt;
-            bullet.time += dt;
 
-            // "Flag the current bullet to be destroyed if its been alive for 1 or more seconds"
-            bullet.destroy |= bullet.time >= 1.0f;
-
-            Rectangle screen_rec;
-            screen_rec.x = 0.0f;
-            screen_rec.y = 0.0f;
-            screen_rec.width = GetScreenWidth();
-            screen_rec.height = GetScreenHeight();
-
-            bullet.destroy |= !CheckCollisionCircleRec(bullet.position, bullet.radius, screen_rec);
-        }
-
-        for (Bullet& bullet : bullets)
-        {
-            for (Enemy& enemy : enemies)
+            // Bullet update
+            for (Bullet& bullet : bullets)
             {
-                // Check if the current bullet is colliding with the current enemy
-                // If so, damage the enemy
-                // Do any on-bullet-enemy behaviour here such as playing sounds
-                if (CheckCollisionCircles(bullet.position, bullet.radius, enemy.enemy_position, enemy.enemy_radius))
+                Vector2 bullet_velocity = bullet.direction * bullet.speed;
+                bullet.position += bullet_velocity * dt;
+                bullet.time += dt;
+
+                // "Flag the current bullet to be destroyed if its been alive for 1 or more seconds"
+                bullet.destroy |= bullet.time >= 1.0f;
+
+                Rectangle screen_rec;
+                screen_rec.x = 0.0f;
+                screen_rec.y = 0.0f;
+                screen_rec.width = GetScreenWidth();
+                screen_rec.height = GetScreenHeight();
+
+                bullet.destroy |= !CheckCollisionCircleRec(bullet.position, bullet.radius, screen_rec);
+            }
+
+            for (Bullet& bullet : bullets)
+            {
+                for (Enemy& enemy : enemies)
                 {
-                    enemy.health -= bullet.damage;
+                    // Check if the current bullet is colliding with the current enemy
+                    // If so, damage the enemy
+                    // Do any on-bullet-enemy behaviour here such as playing sounds
+                    if (CheckCollisionCircles(bullet.position, bullet.radius, enemy.enemy_position, enemy.enemy_radius))
+                    {
+                        enemy.health -= bullet.damage;
+						bullet.destroy = true;
+                        break; 
+                    }
                 }
             }
-        }
 
-        std::erase_if(bullets, [](Bullet& bullet)
-        {
-            return bullet.destroy;
-        });
+            std::erase_if(bullets, [](Bullet& bullet)
+                {
+                    return bullet.destroy;
+                });
 
-        std::erase_if(enemies, [](Enemy& enemy)
-        {
+            std::erase_if(enemies, [](Enemy& enemy)
+                {
 
-                // Do any on-enemy-death behaviour here such as playing sounds
+                    // Do any on-enemy-death behaviour here such as playing sounds
                     return enemy.at_end || enemy.health <= 0.0f;
 
 
-        });
+                });
+
+        }
 
         BeginDrawing();
         ClearBackground(BLACK);
@@ -390,6 +457,11 @@ int main()
             {
                 DrawTile(row, col, tiles[row][col]);
             }
+        }
+
+        for (const Turret& turret : turrets)
+        {
+            DrawTile(turret.cell.row, turret.cell.col, ORANGE);
         }
 
         for (const Bullet& bullet : bullets)
